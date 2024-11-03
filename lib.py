@@ -1,136 +1,167 @@
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 import os
+import pandas as pd
+import matplotlib.pyplot as plt
 
 
-def dataset_import(file_path=None):
-    if file_path is None:
-        # Use a relative path to the test_data folder
-        file_path = os.path.join(
-            os.path.dirname(__file__), "test_data", "unicorn_companies.csv"
+def load_all_datasets():
+    """Load datasets from URLs and concatenate into one DataFrame."""
+    urls = [
+        "https://raw.githubusercontent.com/wpinvestigative/arcos-api/refs/"
+        "heads/master/data/buyer_monthly2006.csv",
+        "https://raw.githubusercontent.com/wpinvestigative/arcos-api/refs/"
+        "heads/master/data/buyer_monthly2007.csv",
+        "https://raw.githubusercontent.com/wpinvestigative/arcos-api/refs/"
+        "heads/master/data/buyer_monthly2008.csv",
+        "https://raw.githubusercontent.com/wpinvestigative/arcos-api/refs/"
+        "heads/master/data/buyer_monthly2009.csv",
+        "https://raw.githubusercontent.com/wpinvestigative/arcos-api/refs/"
+        "heads/master/data/buyer_monthly2010.csv",
+        "https://raw.githubusercontent.com/wpinvestigative/arcos-api/refs/"
+        "heads/master/data/buyer_monthly2011.csv",
+        "https://raw.githubusercontent.com/wpinvestigative/arcos-api/refs/"
+        "heads/master/data/buyer_monthly2012.csv",
+        "https://raw.githubusercontent.com/wpinvestigative/arcos-api/refs/"
+        "heads/master/data/buyer_monthly2013.csv",
+        "https://raw.githubusercontent.com/wpinvestigative/arcos-api/refs/"
+        "heads/master/data/buyer_monthly2014.csv",
+    ]
+    datasets = [pd.read_csv(url) for url in urls]
+    return pd.concat(datasets, ignore_index=True)
+
+
+def clean_and_filter_datasets(df):
+    """Clean, filter, and aggregate data based on state regulations."""
+    df = df[df["BUYER_STATE"].isin(["TX", "FL", "GA", "OR", "WA", "OK"])].copy()
+    df["county-year"] = df["BUYER_COUNTY"] + "-" + df["year"].astype(str)
+    df2 = df.groupby(
+        ["BUYER_COUNTY", "BUYER_STATE", "year", "county-year"], as_index=False
+    )["DOSAGE_UNIT"].sum()
+
+    # Regulation effective in 2007 for TX/OK
+    data_tx_ok = df2[
+        (df2["BUYER_STATE"].isin(["OK", "TX"]))
+        & (df2["year"].isin([2006, 2007, 2008, 2009, 2010]))
+    ]
+    # Regulation effective in 2012 for WA/OR
+    data_wa_or = df2[
+        (df2["BUYER_STATE"].isin(["WA", "OR"]))
+        & (df2["year"].isin([2010, 2011, 2012, 2013, 2014]))
+    ]
+    # Regulation effective in 2010 for FL/GA
+    data_fl_ga = df2[
+        (df2["BUYER_STATE"].isin(["FL", "GA"]))
+        & (df2["year"].isin([2008, 2009, 2010, 2011, 2012, 2013]))
+    ]
+    return data_tx_ok, data_wa_or, data_fl_ga
+
+
+def generate_and_save_plots(datasets):
+    """Generate detailed plots for each state group with annotations."""
+    plot_dir = "images"
+    os.makedirs(plot_dir, exist_ok=True)
+
+    state_pairs = [("TX", "OK", 2007), ("WA", "OR", 2012), ("FL", "GA", 2010)]
+    colors = [("b", "g"), ("b", "g"), ("b", "g")]
+
+    for i, (data, (state1, state2, year), (color1, color2)) in enumerate(
+        zip(datasets, state_pairs, colors), start=1
+    ):
+        # Separate data for each state and group by year
+        data_state1 = (
+            data[data["BUYER_STATE"] == state1]
+            .groupby("year", as_index=False)["DOSAGE_UNIT"]
+            .sum()
         )
-    df_raw = pd.read_csv(file_path)
-    return df_raw
+        data_state2 = (
+            data[data["BUYER_STATE"] == state2]
+            .groupby("year", as_index=False)["DOSAGE_UNIT"]
+            .sum()
+        )
 
+        # Annotation values for the specified year
+        sum_dosage_state1 = data_state1[data_state1["year"] == year][
+            "DOSAGE_UNIT"
+        ].values[0]
+        sum_dosage_state2 = data_state2[data_state2["year"] == year][
+            "DOSAGE_UNIT"
+        ].values[0]
 
-def data_modeling(df_raw):
-    df_edited = df_raw.dropna(subset=["Valuation", "Funding"])
-    df_edited["Funding"] = df_edited["Funding"].astype(
-        str
-    )  # Ensure Funding is treated as a string
-    df_edited = df_edited[~df_edited["Funding"].str.contains("n")].copy()
+        # Plot for state1
+        plt.figure(figsize=(10, 6))
+        plt.plot(
+            data_state1["year"],
+            data_state1["DOSAGE_UNIT"],
+            marker="o",
+            color=color1,
+            linewidth=2,
+            label="Dosage Unit",
+        )
+        plt.title(f"Dosage Unit by Year for {state1}")
+        plt.xlabel("Year")
+        plt.ylabel("Total Volume of Opioids Legally Purchased")
+        for _, row in data_state1.iterrows():
+            plt.text(
+                row["year"],
+                row["DOSAGE_UNIT"],
+                f"{row['DOSAGE_UNIT'] / 1_000_000:.0f}M",
+                ha="center",
+                va="bottom",
+                fontsize=9,
+                color=color1,
+            )
+        plt.axvspan(year - 0.5, year + 0.5, color="gray", alpha=0.3)
+        plt.text(
+            year,
+            sum_dosage_state1 * 0.9,
+            f"Sum in {year}: {sum_dosage_state1 / 1_000_000:.0f}M",
+            ha="center",
+            color="black",
+            fontsize=10,
+        )
+        plt.ylim(0, data_state1["DOSAGE_UNIT"].max() * 1.2)
+        plt.xticks(
+            range(int(data_state1["year"].min()), int(data_state1["year"].max()) + 1)
+        )
+        plt.legend()
+        plt.savefig(f"{plot_dir}/plot_{state1}_{i}.png", dpi=300, bbox_inches="tight")
+        plt.close()
 
-    # Clean up the dollar sign and extract unit
-    df_edited["Funding_clean"] = (
-        df_edited["Funding"].str.replace(r"[$,]", "", regex=True).str.strip()
-    )
-    df_edited["Valuation_clean"] = (
-        df_edited["Valuation"].str.replace(r"[$,]", "", regex=True).str.strip()
-    )
-
-    df_edited["funding_unit"] = df_edited["Funding_clean"].str[-1].str.upper()
-    df_edited["valuation_unit"] = df_edited["Valuation_clean"].str[-1].str.upper()
-
-    df_edited["funding_value"] = pd.to_numeric(
-        df_edited["Funding_clean"].str[:-1], errors="coerce"
-    )
-    df_edited["valuation_value"] = pd.to_numeric(
-        df_edited["Valuation_clean"].str[:-1], errors="coerce"
-    )
-
-    df_edited["funding_value"] = np.where(
-        df_edited["funding_unit"] == "B",
-        df_edited["funding_value"] * 1e9,
-        df_edited["funding_value"] * 1e6,
-    )
-
-    df_edited["valuation_value"] = np.where(
-        df_edited["valuation_unit"] == "B",
-        df_edited["valuation_value"] * 1e9,
-        df_edited["valuation_value"] * 1e6,
-    )
-
-    # Compute value creation and divide by 1e9 to convert to billions
-    df_edited["value_creation"] = (
-        df_edited["valuation_value"] - df_edited["funding_value"]
-    ) / 1e9
-
-    return df_edited
-
-
-# mean function
-def calculate_mean(df_edited):
-    return df_edited["value_creation"].mean()
-
-
-# median function
-def calculate_median_value_creation(df_edited):
-    return df_edited["value_creation"].median()
-
-
-# standard dev function
-def calculate_std_value_creation(df_edited):
-    return df_edited["value_creation"].std()
-
-
-def plot_value_creation_by_industry(df_edited, save_dir):
-    plt.figure(figsize=(12, 8))
-
-    # Create a vibrant custom color palette
-    unique_industries = df_edited["Industry"].nunique()
-    custom_palette = sns.color_palette("Spectral", unique_industries)
-
-    # Create the boxplot with 'Industry' assigned to hue
-    sns.boxplot(
-        x="Industry",
-        y="value_creation",
-        data=df_edited,
-        palette=custom_palette,
-        hue="Industry",
-    )
-
-    # Set title and labels
-    plt.title("Value Creation Variability per Industry", fontsize=16, fontweight="bold")
-    plt.xlabel("Industry", fontsize=14)
-    plt.ylabel("Value Creation (in Billions)", fontsize=14)
-
-    # Rotate the x-axis labels for better readability
-    plt.xticks(rotation=45, ha="right")
-
-    # Add a grid for better visualization
-    plt.grid(True, axis="y", linestyle="--", alpha=0.7)
-
-    # Show the plot
-    plt.tight_layout()
-
-    # Ensure the directory exists, and save the plot
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-
-    plot_path = os.path.join(save_dir, "value_creation_boxplot.png")
-    plt.savefig(plot_path)
-    plt.show()
-
-    print(f"Plot saved to: {plot_path}")
-
-
-# Step 4: Call the functions to load and process the data
-df_raw_o = dataset_import()
-df_edited_o = data_modeling(df_raw_o)
-
-# Step 5: Calculate and print the standard deviation of value_creation
-std_value_creation = calculate_std_value_creation(df_edited_o)
-print("Standard Deviation of Value Creation (in billions):", std_value_creation)
-
-# Step 6: Calculate and print the mean and median of value_creation
-mean_value_creation = calculate_mean(df_edited_o)
-print("Mean of Value Creation (in billions):", mean_value_creation)
-
-median_value_creation = calculate_median_value_creation(df_edited_o)
-print("Median of Value Creation (in billions):", median_value_creation)
-
-
-save_directory = r"C:/Users/chris/Downloads/IDS706/chris_moriera_valuecreation_pandas/"
-plot_value_creation_by_industry(df_edited_o, save_directory)
+        # Plot for state2
+        plt.figure(figsize=(10, 6))
+        plt.plot(
+            data_state2["year"],
+            data_state2["DOSAGE_UNIT"],
+            marker="o",
+            color=color2,
+            linewidth=2,
+            label="Dosage Unit",
+        )
+        plt.title(f"Dosage Unit by Year for {state2}")
+        plt.xlabel("Year")
+        plt.ylabel("Total Volume of Opioids Legally Purchased")
+        for _, row in data_state2.iterrows():
+            plt.text(
+                row["year"],
+                row["DOSAGE_UNIT"],
+                f"{row['DOSAGE_UNIT'] / 1_000_000:.0f}M",
+                ha="center",
+                va="bottom",
+                fontsize=9,
+                color=color2,
+            )
+        plt.axvspan(year - 0.5, year + 0.5, color="gray", alpha=0.3)
+        plt.text(
+            year,
+            sum_dosage_state2 * 0.9,
+            f"Sum in {year}: {sum_dosage_state2 / 1_000_000:.0f}M",
+            ha="center",
+            color="black",
+            fontsize=10,
+        )
+        plt.ylim(0, data_state2["DOSAGE_UNIT"].max() * 1.2)
+        plt.xticks(
+            range(int(data_state2["year"].min()), int(data_state2["year"].max()) + 1)
+        )
+        plt.legend()
+        plt.savefig(f"{plot_dir}/plot_{state2}_{i}.png", dpi=300, bbox_inches="tight")
+        plt.close()

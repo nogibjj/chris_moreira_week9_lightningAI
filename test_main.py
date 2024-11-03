@@ -1,58 +1,40 @@
+from main import load_data, process_data, produce_plots, main
 import pandas as pd
-import os
-from unittest import mock
-from main import main
 
 
-def test_main_plot():
-    # Sample DataFrame
-    df_sample = pd.DataFrame(
-        {
-            "Valuation": ["$1B", "$2B", "$500M", "$1.5B"],
-            "Funding": ["$500M", "$1B", "$250M", "$750M"],
-            "Industry": ["Tech", "Health", "Finance", "Tech"],
-        }
-    )
+def test_main_load():
+    # Test if load_data function returns a DataFrame
+    df = load_data()
+    assert isinstance(df, pd.DataFrame), "load_data should return a DataFrame"
+    print("load_data test passed!")
 
-    # Mock dataset import and data modeling
-    with mock.patch("lib.dataset_import", return_value=df_sample), mock.patch(
-        "lib.data_modeling", return_value=df_sample
-    ), mock.patch("main.plot_value_creation_by_industry") as mock_plot:
 
-        # Mock the print function to capture output
-        with mock.patch("builtins.print") as mock_print:
-            main()  # Call the main function
-            mock_plot.assert_called_once()  # Ensure the plot function was called
+def test_main_processing():
+    # Test if process_data returns three DataFrames
+    df = load_data()
+    data_tx_ok, data_wa_or, data_fl_ga = process_data(df)
+    for dataset in [data_tx_ok, data_wa_or, data_fl_ga]:
+        assert isinstance(dataset, pd.DataFrame), "Each output should be a DataFrame"
+    print("process_data test passed!")
 
-            # Capture the print outputs
-            print_outputs = [call[0][0] for call in mock_print.call_args_list]
 
-            # Check if each statistic (std, mean, median) exists and is a number
-            for line in print_outputs:
-                if "Standard Deviation" in line:
-                    std_value = line.split(":")[-1].strip()
-                    assert std_value.replace(
-                        ".", "", 1
-                    ).isdigit(), "Standard deviation not a valid number"
-                elif "Mean" in line:
-                    mean_value = line.split(":")[-1].strip()
-                    assert mean_value.replace(
-                        ".", "", 1
-                    ).isdigit(), "Mean not a valid number"
-                elif "Median" in line:
-                    median_value = line.split(":")[-1].strip()
-                    assert median_value.replace(
-                        ".", "", 1
-                    ).isdigit(), "Median not a valid number"
+def test_main_plotting():
+    # Test if produce_plots runs without errors
+    df = load_data()
+    data_tx_ok, data_wa_or, data_fl_ga = process_data(df)
+    produce_plots([data_tx_ok, data_wa_or, data_fl_ga])
+    print("produce_plots test passed!")
 
-            # Check if the plot was saved to the expected path
-            expected_save_dir = (
-                r"C:/Users/chris/Downloads/IDS706/chris_moriera_valuecreation_pandas/"
-            )
-            assert os.path.exists(
-                expected_save_dir
-            ), "Plot save directory does not exist"
+
+def test_main():
+    # Run the entire main function to check for any errors
+    main()
+    print("main function test passed!")
 
 
 if __name__ == "__main__":
-    test_main_plot()
+    test_main_load()
+    test_main_processing()
+    test_main_plotting()
+    test_main()
+    print("All tests in test_main.py passed!")

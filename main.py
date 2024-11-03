@@ -1,44 +1,30 @@
-import os
-from lib import (
-    dataset_import,
-    data_modeling,
-    calculate_mean,
-    calculate_median_value_creation,
-    calculate_std_value_creation,
-    plot_value_creation_by_industry,
-)
+from lib import load_all_datasets, clean_and_filter_datasets, generate_and_save_plots
+
+
+def load_data():
+    """Load all datasets and return a combined DataFrame."""
+    return load_all_datasets()
+
+
+def process_data(df):
+    """Process the data to filter and aggregate by state and year."""
+    return clean_and_filter_datasets(df)
+
+
+def produce_plots(datasets):
+    """Generate and save plots for each state and year group."""
+    generate_and_save_plots(datasets)
 
 
 def main():
-    # Load the dataset
-    df_raw = dataset_import()
+    # Step 1: Load data
+    df = load_data()
 
-    # Model the data
-    df_edited = data_modeling(df_raw)
+    # Step 2: Process data
+    data_tx_ok, data_wa_or, data_fl_ga = process_data(df)
 
-    # Calculate statistics
-    std_value_creation = calculate_std_value_creation(df_edited)
-    mean_value_creation = calculate_mean(df_edited)
-    median_value_creation = calculate_median_value_creation(df_edited)
-
-    # Print calculated statistics (with formatting)
-    print(
-        f"Standard Deviation of Value Creation (in billions): "
-        f"{std_value_creation:.4f}"
-    )
-    print(f"Mean of Value Creation (in billions): {mean_value_creation:.4f}")
-    print(f"Median of Value Creation (in billions): {median_value_creation:.4f}")
-
-    # Define the save directory for plots
-    save_directory = (
-        r"C:/Users/chris/Downloads/IDS706/chris_moriera_valuecreation_pandas/"
-    )
-
-    # Ensure the directory exists
-    os.makedirs(save_directory, exist_ok=True)
-
-    # Plot the data
-    plot_value_creation_by_industry(df_edited, save_directory)
+    # Step 3: Produce plots
+    produce_plots([data_tx_ok, data_wa_or, data_fl_ga])
 
 
 if __name__ == "__main__":
