@@ -11,13 +11,13 @@ Test:
 [![Test](https://github.com/nogibjj/chris_moreira_week9_lightningAI/actions/workflows/test.yml/badge.svg)](https://github.com/nogibjj/chris_moreira_week9_lightningAI/actions/workflows/test.yml)
 
 # Schema of Repository Files
-![File Schema](https://github.com/user-attachments/assets/041dea8c-6c751-45fe-b19a-bf03c256e842)
+![File Schema](images/File%20Schema.jpg)
 
 # PROJECT DESCRIPTION
 In this project, we analyze opioid dosage shipments across different U.S. states to explore the impact of state-level opioid regulations. The analysis was conducted using a cloud-based notebook environment on Lightning AI, which integrates the VS Code interface into its cloud infrastructure. A key advantage of Lightning AI over other platforms (such as Google Colab) is its ability to run a terminal for free, providing additional flexibility for managing dependencies and project files.
 
 Below is a snapshot of the Lightning AI interface:
-![Lightning AI Interface](https://github.com/user-attachments/assets/0023f23c-6a99-4497-a748-03e41559b595)
+![Lightning AI Interface](images/LightningAI.jpg)
 
 ### Analysis Overview
 This data analysis investigates the effect of opioid regulations on the volume of opioid shipments in states where these regulations were implemented. The primary states we examined for regulatory impact are:
@@ -47,19 +47,19 @@ This project demonstrates how state-level regulations can vary in effectiveness 
 
 # Charts
 Texas  
-![Texas](https://github.com/user-attachments/assets/b9792624-aca1-489f-8648-5cc5ff053ac2)
+![Texas](images/plot_TX_1.png)
 
 Oklahoma  
-![Oklahoma](https://github.com/user-attachments/assets/11ae8715-3a90-4b4e-bb7a-6fb891f651a0)
+![Oklahoma](images/plot_OK_1.png)
 
 Washington  
-![Washington](https://github.com/user-attachments/assets/f987d4fa-93b4-46fa-a2f7-0c757943e040)
+![Washington](images/plot_WA_2.png)
 
 Oregon  
-![Oregon](https://github.com/user-attachments/assets/c4c8d743-8e78-48bd-b0ce-a3b9b5997399)
+![Oregon](images/plot_OR_2.png)
 
 Florida  
-![Florida](https://github.com/user-attachments/assets/c5da8b56-112c-4140-ac71-e7c0f9e7b7f7)
+![Florida](images/plot_FL_3.png)
 
 Georgia  
-![Georgia](https://github.com/user-attachments/assets/788719e8-5ed2-47d7-899c-98456c864911)
+![Georgia](images/plot_GA_3.png)
