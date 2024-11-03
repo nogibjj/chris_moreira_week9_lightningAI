@@ -15,6 +15,8 @@ Test:
 
 # PROJECT DESCRIPTION
 In this project, we analyze opioid dosage shipments across different U.S. states to explore the impact of state-level opioid regulations. The analysis was conducted using a cloud-based notebook environment on Lightning AI, which integrates the VS Code interface into its cloud infrastructure. A key advantage of Lightning AI over other platforms (such as Google Colab) is its ability to run a terminal for free, providing additional flexibility for managing dependencies and project files.
+Overall Project Schema
+![Project Schema](images/Project%20Schema.jpg)
 
 Below is a snapshot of the Lightning AI interface:
 ![Lightning AI Interface](images/LightningAI.jpg)
